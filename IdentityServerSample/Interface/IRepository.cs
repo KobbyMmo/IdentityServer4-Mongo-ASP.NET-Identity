@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace IdentityServerSample.Interface
 {
-    interface IRepository
+    public interface IRepository
     {
         IMongoDatabase GetDatabase();
         System.Linq.IQueryable<T> All<T>() where T : class, new();
