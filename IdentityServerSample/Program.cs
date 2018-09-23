@@ -7,6 +7,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson.Serialization.Conventions;
 
 namespace IdentityServerSample
 {
@@ -14,6 +15,7 @@ namespace IdentityServerSample
     {
         public static void Main(string[] args)
         {
+            SetConventions();
             BuildWebHost(args).Run();
         }
 
@@ -21,5 +23,13 @@ namespace IdentityServerSample
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .Build();
+
+
+        private static void SetConventions()
+        {
+            ConventionPack cp = new ConventionPack { new LowerCaseElementNameConvetion() };
+            ConventionRegistry.Register("lowercaseName", cp, type => true);
+
+        }
     }
 }
