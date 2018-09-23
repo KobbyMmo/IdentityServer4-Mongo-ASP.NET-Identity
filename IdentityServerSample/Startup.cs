@@ -14,6 +14,8 @@ using IdentityServer4.Services;
 
 namespace IdentityServerSample
 {
+    using Microsoft.AspNetCore.Identity.MongoDB;
+
     public class Startup
     {
         public IConfigurationRoot Configuration { get; }
