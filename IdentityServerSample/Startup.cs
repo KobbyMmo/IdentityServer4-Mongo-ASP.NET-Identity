@@ -14,6 +14,7 @@ using IdentityServer4.Services;
 
 namespace IdentityServerSample
 {
+    using IdentityServerSample.Services;
     using Microsoft.AspNetCore.Identity.MongoDB;
 
     public class Startup
@@ -39,6 +40,7 @@ namespace IdentityServerSample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<ConfigurationOptions>(Configuration);
             services.AddCors(o => o.AddPolicy("MyPolicy", builder =>
                  {
                      builder.AllowAnyOrigin()
@@ -46,7 +48,6 @@ namespace IdentityServerSample
                             .AllowAnyHeader();
                  }));
             services.AddSingleton<IProfileService, ProfileService>();
-            services.Configure<ConfigurationOptions>(Configuration);
             services.AddMvc();
 
             services.AddIdentityServer(
@@ -90,6 +91,8 @@ namespace IdentityServerSample
             //     options.RetrieveUserDetails = true;
             // });
 
+            services.AddTransient<IEmailSender, EmailSender>();
+            services.AddTransient<ISmsSender, SmsSender>();
 
         }
 
