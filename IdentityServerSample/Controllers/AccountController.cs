@@ -13,6 +13,8 @@ using Microsoft.Extensions.Options;
 using IdentityServerSample.Models;
 using IdentityServerSample.Models.AccountViewModels;
 using IdentityServerSample.Services;
+using IdentityModel;
+using Microsoft.AspNetCore.Identity.MongoDB;
 
 namespace IdentityServerSample.Controllers
 {
@@ -220,19 +222,18 @@ namespace IdentityServerSample.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
+                var claimList = new List<Claim>();
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                user.Claims.Add(new IdentityUserClaim(new Claim(JwtClaimTypes.Name, model.Email)));
+                user.Claims.Add(new IdentityUserClaim(new Claim(JwtClaimTypes.Email, model.Email)));
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User created a new account with password.");
-
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var callbackUrl = Url.EmailConfirmationLink(user.Id, code, Request.Scheme);
-                    await _emailSender.SendEmailConfirmationAsync(model.Email, callbackUrl);
-
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    _logger.LogInformation("User created a new account with password.");
-                    return RedirectToLocal(returnUrl);
+                    claimList.Add(new Claim(JwtClaimTypes.Subject, user.Id));
+                    await _userManager.AddClaimsAsync(user, claimList);
+                    SendEmailConfirmationCode(user, model.Email, returnUrl);
+                    _logger.LogInformation(3, "User created a new account with password.");
+                    return View("EmailConfirmationSent");
                 }
                 AddErrors(result);
             }
@@ -438,6 +439,13 @@ namespace IdentityServerSample.Controllers
         }
 
         #region Helpers
+
+        private async void SendEmailConfirmationCode(ApplicationUser user, string Email, string returnUrl = "")
+        {
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code, returnUrl = returnUrl }, protocol: HttpContext.Request.Scheme);
+            await _emailSender.SendEmailAsync(Email, "Confirm your account", "Please confirm your account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+        }
 
         private void AddErrors(IdentityResult result)
         {
