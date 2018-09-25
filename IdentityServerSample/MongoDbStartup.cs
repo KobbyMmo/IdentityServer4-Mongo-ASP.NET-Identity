@@ -4,6 +4,7 @@ using IdentityServerSample.Interface;
 using IdentityServerSample.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson.Serialization;
 using System;
 using System.Collections.Generic;
@@ -32,58 +33,63 @@ namespace IdentityServerSample
             var repository = (IRepository)app.ApplicationServices.GetService(typeof(IRepository));
 
             //Resolve ASP .NET Core Identity with DI help
-            var userManager = (UserManager<ApplicationUser>)app.ApplicationServices.GetService(typeof(UserManager<ApplicationUser>));
-
-            // --- Configure Classes to ignore Extra Elements (e.g. _Id) when deserializing ---
-            ConfigureMongoDriver2IgnoreExtraElements();
-
-            var createdNewRepository = false;
-
-
-            //  --Client
-            if (!repository.CollectionExists<Client>())
+            using (var scope = app.ApplicationServices.CreateScope())
             {
-                foreach (var client in Config.GetClients())
+                //Resolve ASP .NET Core Identity with DI help
+                var userManager = (UserManager<ApplicationUser>)scope.ServiceProvider.GetService(typeof(UserManager<ApplicationUser>));
+
+                // --- Configure Classes to ignore Extra Elements (e.g. _Id) when deserializing ---
+                ConfigureMongoDriver2IgnoreExtraElements();
+
+                var createdNewRepository = false;
+
+
+                //  --Client
+                if (!repository.CollectionExists<Client>())
                 {
-                    repository.Add(client);
+                    foreach (var client in Config.GetClients())
+                    {
+                        repository.Add(client);
+                    }
+                    createdNewRepository = true;
                 }
-                createdNewRepository = true;
-            }
 
-            //  --IdentityResource
-            if (!repository.CollectionExists<IdentityResource>())
-            {
-                foreach (var res in Config.GetIdentityResources())
+                //  --IdentityResource
+                if (!repository.CollectionExists<IdentityResource>())
                 {
-                    repository.Add(res);
+                    foreach (var res in Config.GetIdentityResources())
+                    {
+                        repository.Add(res);
+                    }
+                    createdNewRepository = true;
                 }
-                createdNewRepository = true;
-            }
 
 
-            //  --ApiResource
-            if (!repository.CollectionExists<ApiResource>())
-            {
-                foreach (var api in Config.GetApiResources())
+                //  --ApiResource
+                if (!repository.CollectionExists<ApiResource>())
                 {
-                    repository.Add(api);
+                    foreach (var api in Config.GetApiResources())
+                    {
+                        repository.Add(api);
+                    }
+                    createdNewRepository = true;
                 }
-                createdNewRepository = true;
+
+
+                //Populate MongoDB with dummy users to enable test - e.g. Bob, Alice
+                if (createdNewRepository == true)
+                {
+                    AddSampleUsersToMongo(userManager);
+                }
+
+
+                // If it's a new Repository (database), need to restart the website to configure Mongo to ignore Extra Elements.
+                if (createdNewRepository)
+                {
+                    throw new Exception(_newRepositoryMsg);
+                }
             }
-
-
-            //Populate MongoDB with dummy users to enable test - e.g. Bob, Alice
-            if (createdNewRepository == true)
-            {
-                AddSampleUsersToMongo(userManager);
-            }
-
-
-            // If it's a new Repository (database), need to restart the website to configure Mongo to ignore Extra Elements.
-            if (createdNewRepository)
-            {
-                throw new Exception(_newRepositoryMsg);
-            }
+          
 
         }
 
