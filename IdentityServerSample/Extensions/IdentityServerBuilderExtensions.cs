@@ -1,6 +1,7 @@
 ﻿using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using IdentityServerSample.Interface;
+using IdentityServerSample.Models;
 using IdentityServerSample.Repository;
 using IdentityServerSample.Store;
 using Microsoft.AspNetCore.Identity;
@@ -38,7 +39,7 @@ namespace IdentityServerSample.Extensions
         /// - IRoleStore<T>
         /// ]]></remarks>
         public static IIdentityServerBuilder AddMongoDbForAspIdentity<TIdentity, TRole>(this IIdentityServerBuilder builder, IConfigurationRoot configuration) where
-            TIdentity : Microsoft.AspNetCore.Identity.MongoDB.IdentityUser where TRole : Microsoft.AspNetCore.Identity.MongoDB.IdentityRole
+            TIdentity : ApplicationUser where TRole : Microsoft.AspNetCore.Identity.MongoDB.IdentityRole
         {
 
             //User Mongodb for Asp.net identity in order to get users stored
